@@ -1,0 +1,642 @@
+{% extends '::base.html.twig' %}
+
+{% block stylesheets %}
+<style>
+	table {
+		border: 1px solid black;
+	}
+	table td {
+		border: 1px solid black;
+		width: 200px;
+		height: 120px;
+		text-align: left;
+		position: relative;
+	}
+	td .date {
+		position: absolute;
+		top: 0;
+		text-align: center;
+		width: 100%;
+		font-weight: bold;
+	}
+	td span.instructions {
+		font-size: 8px;
+		text-align: center;
+	}
+	span.dateAbr {
+		position: absolute;
+		right: 10px;
+	}
+	td .btn-toolbar {
+		text-align: center;
+	}
+	.btn-toolbar .btn {
+		margin-top: 7px;
+	}
+	.month, .year {
+		text-align: center;
+	}
+	.week {
+		background: #e2e2e2;
+	}
+	.date {
+		text-align: right;
+		
+	}
+	.day {
+		text-align: center;
+	}
+	.menu {
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		width: 100%;
+		text-align: right;
+		padding: 0 10px;
+	}
+	table {
+		margin-top: 10px;
+	}
+</style>
+{% endblock %}
+
+{% block body -%}
+	<h2>Calendar</h2>
+	<p>Select the lunches you would like to order for your children.</p>
+
+	<div ng-controller="calendarCtrl">
+		{# <pre>{% verbatim %}{{calendar[0][0].date | date:'EEEE'}}{% endverbatim %}</pre> #}
+		{# <pre>{% verbatim %}{{children | json}}{% endverbatim %}</pre> #}
+		{# <pre>{% verbatim %}{{calendar | json}}{% endverbatim %}</pre> #}
+		<p><span class="lead">Children:</span><br>
+			<ul class="list-unstyled">
+				<li ng-repeat="child in children"><em>{% verbatim %}{{child.name}}{% endverbatim %}:</em> <span class="badge">{% verbatim %}{{child.total}}{% endverbatim %}</span></li>
+			</ul>
+		</p>
+		<table>
+			<tr>
+				<td class="month">
+					<div class="date">Select Entire Month<br></div>
+					<span class="small instructions">(This will select all visible weeks)</span>
+					<div class="btn-toolbar">
+						<label ng-repeat="child in children" class="btn btn-primary" ng-disabled="child{% verbatim %}{{c = $index}}{% endverbatim %}" btn-checkbox ng-click="toggleMonth($index)" ng-model="child.months">{% verbatim %}{{child.name}}{% endverbatim %}</label>
+					</div>
+				</td>
+				<td class="year">
+					<div class="date">Select Entire Year</div>
+					<span class="small instructions">(This will select the entire year)</span>
+					<div class="btn-toolbar">
+						<label ng-repeat="child in children" class="btn btn-success" btn-checkbox ng-click="toggleYear($index)" ng-model="child.year">{% verbatim %}{{child.name}}{% endverbatim %}</label>
+					</div>
+				</td>
+			</tr>
+			<tr ng-repeat="week in calendar">
+				<td class="week week{% verbatim %}{{w = $index}}{% endverbatim %}">
+					<div class="date">Select Entire Week</div>
+					<div class="btn-toolbar">
+						<label ng-repeat="child in children" class="btn btn-primary" ng-disabled="child{% verbatim %}{{c = $index}}{% endverbatim %}" btn-checkbox ng-click="toggleWeek($index, w)" ng-model="child.weeks[w]">{% verbatim %}{{child.name}}{% endverbatim %}</label>
+					</div>
+				</td>
+				<td ng-repeat="day in week">
+					<div class="date date{% verbatim %}{{d = $index}}{% endverbatim %}">
+						<span>{% verbatim %}{{day.raw | date:'EEEE'}}{% endverbatim %}</span>
+						<span class="dateAbr">{% verbatim %}{{day.raw | date:'M/d'}}{% endverbatim %}</span>
+					</div>
+					<div class="btn-toolbar">
+						<label ng-repeat="child in children" class="btn btn-primary child{% verbatim %}{{c = $index}}{% endverbatim %}" btn-checkbox ng-click="toggleDay($index, w, day.raw)" ng-disabled="child{% verbatim %}{{c = $index}}{% endverbatim %}" ng-model="child.dates[(day.raw)]" ng-if="!holidays.hasOwnProperty(day.raw)">{% verbatim %}{{child.name}}{% endverbatim %}</label>
+						<h2 ng-if="holidays.hasOwnProperty(day.raw)">HOLIDAY</h2>
+					</div>
+					<a class="menu" href="#" tooltip='{% verbatim %}{{menu[day.month][day.date]}}{% endverbatim %}'>Menu</a>
+				</td>
+			</tr>
+		</table>
+		<br>
+		<button class="btn btn-primary btn-lg btn-block" ng-click="placeOrder()">Place Order</button>
+		{# <pre>{% verbatim %}{{order | json}}{% endverbatim %}</pre> #}
+		<div id="order">
+			<div ng-repeat="child in order">
+				<h3>{% verbatim %}{{child.name}}{% endverbatim %}</h3>
+				<ul class="list-unstyled">
+					<li ng-if="child.year">All Year</li>
+					<li ng-repeat="date in child.dates">{% verbatim %}{{date | date:'fullDate'}}{% endverbatim %}</li>
+				</ul>
+            </div>
+		</div>
+
+		{# <div ng-controller="OrderModalCtrl">
+			<script type="text/ng-template" id="myModalContent.html">
+		        <div class="modal-header">
+		            <h3 class="modal-title">Lunches to Order</h3>
+		        </div>
+		        <div class="modal-body">
+		            <div ng-repeat="child in children">
+						<h3>{% verbatim %}{{child.name}}{% endverbatim %}</h3>
+						<ul>
+							<li ng-if="child.year">All Year</li>
+							<li ng-repeat="date in child.dates">{% verbatim %}{{date | 'fullDate'}}{% endverbatim %}</li>
+						</ul>
+		            </div>
+		        </div>
+		        <div class="modal-footer">
+		            <button class="btn btn-primary" ng-click="ok()">OK</button>
+		            <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
+		        </div>
+		    </script>
+		</div> #}
+		<br>
+	</div>
+	
+{% endblock %}
+
+{% block javascripts %}
+	<script>
+	angular.module('LunchApp', ['ui.bootstrap'])
+		.controller('calendarCtrl', ['$scope', function($scope){
+			// Holidays
+			$scope.holidays = {
+				1409547600000: true,
+				1409634000000: true,
+				1413176400000: true,
+				1413262800000: true,
+				1413349200000: true,
+				1413435600000: true,
+				1413522000000: true
+			};
+
+			// Menu
+			$scope.menu = {
+				8: {
+					1: "Potatoes and Cheese",
+					2: "Meet and potatoes",
+					3: "Potatoes and Cheese",
+					4: "Meet and potatoes",
+					5: "Potatoes and Cheese",
+					6: "Meet and potatoes",
+					7: "Potatoes and Cheese",
+					8: "Meet and potatoes",
+					9: "Potatoes and Cheese",
+					10: "Meet and potatoes",
+					11: "Potatoes and Cheese",
+					12: "Meet and potatoes",
+					13: "Potatoes and Cheese",
+					14: "Meet and potatoes",
+					15: "Potatoes and Cheese",
+					16: "Meet and potatoes",
+					17: "Potatoes and Cheese",
+					18: "Meet and potatoes",
+					19: "Potatoes and Cheese",
+					20: "Meet and potatoes",
+					21: "Potatoes and Cheese",
+					22: "Meet and potatoes",
+					23: "Potatoes and Cheese",
+					24: "Meet and potatoes",
+					25: "Potatoes and Cheese",
+					26: "Meet and potatoes",
+					27: "Potatoes and Cheese",
+					28: "Meet and potatoes",
+					29: "Potatoes and Cheese",
+					30: "Meet and potatoes"
+				},
+				9: {
+					1: "Potatoes and Cheese",
+					2: "Meet and potatoes",
+					3: "Potatoes and Cheese",
+					4: "Meet and potatoes",
+					5: "Potatoes and Cheese",
+					6: "Meet and potatoes",
+					7: "Potatoes and Cheese",
+					8: "Meet and potatoes",
+					9: "Potatoes and Cheese",
+					10: "Meet and potatoes",
+					11: "Potatoes and Cheese",
+					12: "Meet and potatoes",
+					13: "Potatoes and Cheese",
+					14: "Meet and potatoes",
+					15: "Potatoes and Cheese",
+					16: "Meet and potatoes",
+					17: "Potatoes and Cheese",
+					18: "Meet and potatoes",
+					19: "Potatoes and Cheese",
+					20: "Meet and potatoes",
+					21: "Potatoes and Cheese",
+					22: "Meet and potatoes",
+					23: "Potatoes and Cheese",
+					24: "Meet and potatoes",
+					25: "Potatoes and Cheese",
+					26: "Meet and potatoes",
+					27: "Potatoes and Cheese",
+					28: "Meet and potatoes",
+					29: "Potatoes and Cheese",
+					30: "Meet and potatoes",
+					31: "Meet and potatoes"
+				}
+			};
+
+			// Children will hold the names, total lunches, whether to buy all year, and dates the children will eat lunch.
+			//   All year implies dates will be useless
+			$scope.children = [
+				{name: 'Sarah', total: 0, year: false, months: false, weeks: {}, dates: {}}, 
+				{name: 'Jojo', total: 0, year: false, months: false, weeks: {}, dates: {}}, 
+				{name: 'Mia', total: 0, year: false, months: false, weeks: {}, dates: {}}
+			];
+
+			$scope.order = {}
+
+			$scope.placeOrder = function() {
+				$scope.order = Array();
+				angular.forEach($scope.children, function(child, id) {
+					if (child.year) {
+						$scope.order[id] = {name: child.name, year: true};
+						return;
+					}
+					$scope.order[id] = {name: child.name, total: child.total};
+
+					$scope.order[id].dates = Array();
+					angular.forEach(child.dates, function(dayOn, date) {
+						if (dayOn) {
+							$scope.order[id].dates.push(date);
+						}
+					});
+				});
+			}
+
+			$scope.toggleYear = function(childId) {
+				$scope['child' + childId] = !$scope['child' + childId];
+				$scope.children[childId].total = 'All Year';
+
+				if (!$scope['child' + childId]) {
+					$scope.recalculateTotal(childId);
+				}
+			}
+
+			// TODO: Turn off items if we untoggle the month
+			$scope.toggleMonth = function(childId) {
+				var toggle = !$scope.children[childId].months;
+
+				angular.forEach($scope.calendar, function(week, weekId) {
+					$scope.toggleWeek(childId, weekId);
+					$scope.children[childId].weeks[weekId] = toggle;
+					// angular.forEach($scope.calendar[weekId], function(day) {
+					// 	$scope.updateTotal(childId, day.raw, toggle);
+
+					// 	$scope.children[childId].weeks[weekId] = toggle;
+					// 	if (!$scope.holidays[day.raw]) {
+					// 		$scope.children[childId].dates[day.raw] = toggle;
+					// 	}
+					// });
+				});
+			}
+
+			/**
+			 * @ngdoc function
+			 * @name toggleWeek
+			 * @kind function
+			 *
+			 * @description Turns on or off all the dates of a week
+			 * @param {integer} childId The array index of the child selected (for $scope.children).
+			 * @param {integer} weekId The array index of the weekId (for $scope.calendar)
+			 */
+			$scope.toggleWeek = function(childId, weekId) {
+				// Determine the new toggle stateof the week
+				var toggle = !$scope.children[childId].weeks[weekId];
+
+				// Cycle through each day in the week
+				angular.forEach($scope.calendar[weekId], function(day) {
+					// Update the total for the day if it's turned on or off
+					$scope.updateTotal(childId, day.raw, toggle);
+
+					// Turn on or off the buttons based on the week's button
+					if (!$scope.holidays[day.raw]) {
+						$scope.children[childId].dates[day.raw] = toggle;
+					}
+				});
+			}
+
+			/**
+			 * @ngdoc function
+			 * @name toggleDay
+			 * @kind function
+			 *
+			 * @description Turns on or off all the date and updates the week buttons if needbe
+			 * @param {integer} childId The array index of the child selected (for $scope.children).
+			 * @param {integer} weekId The array index of the weekId (for $scope.calendar).
+			 * @param {integer} date The numerical value for selected date, also the object key for the child's days.
+			 */
+			$scope.toggleDay = function(childId, weekId, date) {
+				// Toggle Week if already on
+				var toggleOn = false;
+				// If this is the first time we are clicking the date or the date is not clicked, change toggle to true
+				if ($scope.children[childId].dates[date] === undefined || !$scope.children[childId].dates[date]) {
+					toggleOn = true;
+				}
+				if ($scope.children[childId].weeks[weekId] && $scope.children[childId].dates[date]) {
+					$scope.children[childId].weeks[weekId] = false;
+					$scope.children[childId].months = false;
+				}
+				// Update totals
+				$scope.updateTotal(childId, date, toggleOn);
+			}
+
+			/**
+			 * @ngdoc function
+			 * @name updateTotal
+			 * @kind function
+			 *
+			 * @description Updates the total lunches a student is signed up for
+			 * @param {integer} childId The array index of the child selected (for $scope.children).
+			 * @param {integer} date The numerical value for selected date, also the object key for the child's days.
+			 * @param {boolean} toggleOn Is the button turned on
+			 */
+			$scope.updateTotal = function(childId, date, toggleOn) {
+				// If the day is a holiday ignore
+				if ($scope.holidays[date] || toggleOn === $scope.children[childId].dates[date]) {
+					return;
+				}
+
+				if ($scope.children[childId].total === NaN) {
+					$scope.recalculateTotal(childId);
+				}
+				// If the date exists already or already is toggled
+				if (toggleOn) {
+					$scope.children[childId].total++;
+				} else {
+					$scope.children[childId].total--;
+				}
+			}
+
+			$scope.recalculateTotal = function(childId) {
+				$scope.children[childId].total = 0;
+				angular.forEach($scope.children[childId].dates, function(date) {
+					if (date) {
+						$scope.children[childId].total++;
+					}
+				});
+			}
+
+			/** 
+			 * @ngdoc function
+			 * @name createCalendarArray
+			 * @kind function
+			 *
+			 * @description Creates an array of weeks and dates for a given year
+			 * @param {integer} month Numerical id for month (month - 1).
+			 * @param {integer} year Numerical value for year.
+			 * @param {integer} numOfWeeks Number of weeks to include in the calendar.
+			 * @returns {Array} calendar array.
+			 */
+			createCalendarArray = function(month, year, numOfWeeks) {
+				var dates = Array(),
+					cur = new Date(),
+					week = 0;
+
+				// Set the number of weeks for the calendar
+				numOfWeeks = numOfWeeks || 5;
+				for (var i = numOfWeeks; i >= 0; i--) { dates[i] = Array(); };
+
+				// Initialize the date
+				// cur.setDate(1);
+				cur.setYear(year);
+				cur.setMonth(month);
+				cur.setHours(0);
+				cur.setMinutes(0);
+				cur.setSeconds(0);
+				cur.setMilliseconds(0);
+
+				// Initialize the start date to one week from today starting with Monday
+				if (cur.getDay() === 1) {
+					cur.setDate(cur.getDate() + 7);
+				} else {
+					cur.setDate(cur.getDate()-cur.getDay()+1 + 14);
+				}
+
+				// Add dates to the weeks until the desired numOfWeeks is filled
+				while (week < dates.length) {
+					// Holiday Check:
+					// && !holidays.hasOwnProperty(cur.getDate())
+
+					// Make sure that Saturday (6) and Sunday (0) are not part of the calendar
+					if ((cur.getDay() !== 0 && cur.getDay() !== 6)) {
+						dates[week].push({raw: cur.valueOf(), dateString: cur.toString(), month: cur.getMonth(), date: cur.getDate()});
+					}
+
+					// Increment the week when we get to the end
+					(cur.getDay() === 6) ? week++ : false;
+
+					// Increment the date to tomorrow
+					cur.setDate(cur.getDate() + 1);
+				}
+				return dates;
+			};
+
+			$scope.calendar = createCalendarArray(8, 2014, 5); 
+
+		}])
+
+		.controller('ButtonsCtrl', ['$scope', function($scope){
+			$scope.lunch = {
+					year: 2014,
+					months: [{
+						names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}],
+						name: 'September',
+						weeks: [{
+							names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}],
+							days: [
+								{ date: '2014-09-01', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-09-02', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-09-03', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-09-04', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-09-05', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]}
+							]
+						},{
+							names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}],
+							days: [
+								{ date: '2014-09-08', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-09-09', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-09-10', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-09-11', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-09-12', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]}
+							]
+						},{
+							names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}],
+							days: [
+								{ date: '2014-09-15', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-09-16', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-09-17', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-09-18', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-09-19', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]}
+							]
+						},{
+							names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}],
+							days: [
+								{ date: '2014-09-22', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-09-23', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-09-24', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-09-25', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-09-26', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]}
+							]
+						},{
+							names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}],
+							days: [
+								{ date: '2014-09-29', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-09-30', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{},
+								{},
+								{}
+							]
+						}]
+					},
+					{
+						names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}],
+						name: 'October',
+						weeks: [{
+							names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}],
+							days: [
+								{},
+								{},
+								{ date: '2014-10-01', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-10-02', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-10-03', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]}
+							]
+						},{
+							names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}],
+							days: [
+								{ date: '2014-10-06', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-10-07', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-10-08', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-10-09', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-10-10', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]}
+							]
+						},{
+							names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}],
+							days: [
+								{ date: '2014-10-13', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-10-14', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-10-15', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-10-16', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-10-17', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]}
+							]
+						},{
+							names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}],
+							days: [
+								{ date: '2014-10-20', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-10-21', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-10-22', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-10-23', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-10-24', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]}
+							]
+						},{
+							names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}],
+							days: [
+								{ date: '2014-10-27', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-10-28', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-10-29', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-10-30', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+								{ date: '2014-10-31', names: [{name: 'Sarah', toggle: false}, {name: 'Jojo', toggle: false}, {name: 'Mia', toggle: false}]},
+							]
+						}]
+					}]
+				};
+
+			$scope.months = [{name: 'September', id: 0},
+							 {name: 'October', id: 1}];
+			$scope.month = 0;
+
+			$scope.totals = [{name: 'Sarah', total: 0}, {name: 'Jojo', total: 0}, {name: 'Mia', total: 0}];
+
+			$scope.totalLunchByChild = function(nameId) {
+				total = 0;
+				angular.forEach($scope.lunch.months, function(month, monthId) {
+					angular.forEach($scope.lunch.months[monthId].weeks, function(week, weekId) {
+						angular.forEach($scope.lunch.months[monthId].weeks[weekId].days, function(day, dayId) {
+							// console.log($scope.lunch.months[monthId].weeks[weekId].days[dayId].names);
+							if (($scope.lunch.months[monthId].weeks[weekId].days[dayId].names !== undefined) && $scope.lunch.months[monthId].weeks[weekId].days[dayId].names[nameId].toggle) {
+								total = total + 1;
+							}
+						});
+					});
+				});
+				// console.log(total);
+				$scope.totals[nameId].total = total;
+			}
+
+			$scope.changeMonth = function(id) {
+				$scope.month = id;
+			};
+
+			$scope.toggleDay = function(nameId, monthId, weekId, dayId, toggle) {
+				// Check to see if the day even exists
+				if ($scope.lunch.months[monthId].weeks[weekId].days[dayId].names === undefined) {
+					return;
+				}
+				// If clicked on day and button is going from on to off
+				if (toggle === undefined && $scope.lunch.months[monthId].weeks[weekId].days[dayId].names[nameId].toggle) {
+					// turn month and week off
+					$scope.lunch.months[monthId].weeks[weekId].names[nameId].toggle = false;
+					$scope.lunch.months[monthId].names[nameId].toggle = false;
+				}
+				// If clicked on day and button goes from off to on
+				else if (toggle === undefined) {
+					$scope.lunch.months[monthId].weeks[weekId].names[nameId].toggle = $scope.isAllWeek(nameId, monthId, weekId, dayId);
+					$scope.lunch.months[monthId].names[nameId].toggle = $scope.isAllMonth(nameId, monthId, weekId);
+				}
+				// if clicked on week or month
+				else {
+					// turn on day
+					$scope.lunch.months[monthId].weeks[weekId].days[dayId].names[nameId].toggle = toggle;
+				}
+
+				$scope.totalLunchByChild(nameId);
+
+			}
+
+			$scope.isAllWeek = function(nameId, monthId, weekId, dayId) {
+				var val = true;
+				angular.forEach($scope.lunch.months[monthId].weeks[weekId].days, function(day, id) {
+					if (dayId === id) {
+						return;
+					}
+					if (!day.names[nameId].toggle) {
+						val = val && false;
+					}
+				});
+				return val;
+			}
+
+			$scope.isAllMonth = function(nameId, monthId, weekId) {
+				var val = true;
+				angular.forEach($scope.lunch.months[monthId].weeks, function(week, id) {
+					if (!week.names[nameId].toggle) {
+						val = val && false;
+					}
+				});
+				return val;
+			}
+
+			$scope.toggleWeek = function(nameId, monthId, weekId, toggle) {
+				// console.log(index)
+				// $scope.week(name, this.$parent.$index);
+				var toggle = toggle || !$scope.lunch.months[monthId].weeks[weekId].names[nameId].toggle;
+
+				if (!toggle) {
+					$scope.lunch.months[monthId].names[nameId].toggle = toggle;
+				}
+
+				angular.forEach($scope.lunch.months[monthId].weeks[weekId].days, function(d, dayId) {
+					$scope.toggleDay(nameId, monthId, weekId, dayId, toggle);
+				});
+			};
+
+			$scope.toggleMonth = function(nameId, monthId, toggle) {
+				var toggle = toggle || !$scope.lunch.months[monthId].names[nameId].toggle;
+
+				angular.forEach($scope.lunch.months[monthId].weeks, function(w, weekId) {
+					$scope.lunch.months[monthId].weeks[weekId].names[nameId].toggle = toggle;
+					$scope.toggleWeek(nameId, monthId, weekId, toggle);
+				});
+			}			
+		}])
+		.controller('MonthSelectCtrl', ['$scope', function($scope){
+			
+		}]);
+	</script>
+{% endblock %}

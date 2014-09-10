@@ -1,0 +1,32 @@
+I need to keep track of the families and the students within them
+	Family names
+	Can I compare the passwords in Renweb using the ODBC connection???
+	Student names
+
+I need to keep track of the lunches 
+	Quantity and Dates and Cost
+
+I need to keep track of which students will have lunch on which dates
+	Students need to be able to purchase lunches by the day, the week, the month, and the year
+	Parents need an "easy" way to see who and when they have lunches
+	Emails need to be sent to remind parents when their students don't have lunch anymore
+	Parents need to be notified if some of their students are not getting lunches but others are
+
+
+Family
+	ID
+	Name (parents first and last)
+	Username (primary email)
+	Password
+	Emails (stored as comma separated fields...or semi-colon)
+
+Student
+	ID
+	First Name
+	Last Name
+	FamilyID
+
+Lunch
+	Date
+	StudentIDs
+	Cost = 3.75

@@ -1,0 +1,10 @@
+acme_task:
+    resource: "@AcmeTaskBundle/Controller/"
+    type:     annotation
+    prefix:   /
+
+jpg_lunch:
+    resource: "@JPGLunchBundle/Controller/"
+    type:     annotation
+    prefix:   /
+

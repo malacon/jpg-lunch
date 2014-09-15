@@ -1,0 +1,525 @@
+{% extends '::base.html.twig' %}
+
+{% block stylesheets %}
+<style>
+	.container {
+		padding: 10px;
+		width: 100%;
+	}
+	table {
+		border: 1px solid black;
+		min-width: 1200px;
+	}
+	table td {
+		border: 1px solid black;
+		width: 15%;
+		height: 170px;
+		text-align: left;
+		position: relative;
+	}
+	td .date {
+		position: absolute;
+		top: 0;
+		text-align: center;
+		width: 100%;
+		font-weight: bold;
+	}
+	td span.instructions {
+		font-size: 8px;
+		text-align: center;
+	}
+	span.dateAbr {
+		position: absolute;
+		right: 10px;
+	}
+	td .btn-toolbar {
+		margin: 0 auto;
+		text-align: center;
+		height: 100%;
+		padding: 10px;
+	}
+	.btn-toolbar .btn {
+		margin-top: 7px;
+	}
+	.year-toolbar {
+		margin-left: 10px;
+	}
+	.month, .year {
+		text-align: center;
+	}
+	.week {
+		background: #e2e2e2;
+	}
+	.date {
+		text-align: right;
+		
+	}
+	.day {
+		text-align: center;
+	}
+	.menu {
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		width: 100%;
+		text-align: left;
+		padding: 0 10px;
+	}
+
+	.box { 
+		width: 15%;
+		height: 200px;
+		position: relative;
+	}
+	li.box {
+		display: inline-block;
+	}
+	table {
+		margin-top: 10px;
+	}
+	.tab-content {
+		border: 1px solid #ddd;
+		border-top: none;
+		padding: 10px 5px;
+	}
+	.badge.badge-warning {
+		color: #fff;
+    	background-color: #f0ad4e;
+	}
+	.children {
+		display: inline-block;
+	}
+	.title img {
+		width: 100px;
+	}
+	.tabset {
+		min-width: 1210px;
+	}
+	.loading {
+		display: block;
+		position: fixed;
+		left: 45%;
+		font-size: 30px;
+		font-weight: bold;
+		top: 50%;
+		z-index: -1;
+	}
+	.base {
+		background-color: #fff;
+	}
+</style>
+{% endblock %}
+
+{% block body -%}
+	<h2 class="title"><img src="{{ asset('images/logo.png') }}" alt=""> Lunch Calendar</h2>
+	<div class="loading">Loading...</div>
+	<div ng-controller="calendarCtrl" ng-cloak class="ng-cloak base">
+		<p>Select the lunches you would like to order for your children.  Lunches cost {% verbatim %}{{menu.cost | currency}}{% endverbatim %}.</p>
+		{# <button class="btn btn-info" ng-click="isCollapsed = !isCollapsed">Show Data</button> #}
+		{# <pre>{% verbatim %}{{calendar[0][0].date | date:'EEEE'}}{% endverbatim %}</pre> #}
+		{# <pre collapse="isCollapsed">{% verbatim %}{{children | json}}{% endverbatim %}</pre> #}
+		{# <pre collapse="isCollapsed">{% verbatim %}{{toggles | json}}{% endverbatim %}</pre> #}
+		{# <pre collapse="isCollapsed" ng-click="isCollapsed = !isCollapsed">{% verbatim %}{{calendar | json}}{% endverbatim %}</pre> #}
+		<div><span class="lead">Children: </span>	<ul class="children list-unstyled list-inline">
+				<li ng-repeat="child in children"><em>{% verbatim %}{{child.name}}{% endverbatim %}:</em> <span class="badge">{% verbatim %}{{child.dates.length}}{% endverbatim %}</span></li>
+				<li><strong>Total: </strong> <span class="badge badge-warning">{% verbatim %}{{total()}} | {{total() * menu.cost | currency}}{% endverbatim %}</span></li>
+			</ul>
+		</div>
+	    <div><span class="lead">Select Entire Year: </span><div class="btn-toolbar btn-group year-toolbar"> 
+			<label ng-repeat="child in children" class="btn btn-primary" ng-disabled="child{% verbatim %}{{c = $index}}{% endverbatim %}" btn-checkbox ng-click="toggleYear($index)" ng-model="toggles.years['y'+$index]">{% verbatim %}{{child.name}}{% endverbatim %}</label>
+		</div></div>
+	    <tabset class="tabset">
+			<tab heading="{% verbatim %}{{month.month | date:'MMMM'}}{% endverbatim %}" ng-repeat="month in calendar">
+				<strong>Select all of {% verbatim %}{{month.month | date:'MMMM'}}{% endverbatim %}: <div class="btn-toolbar btn-group year-toolbar">
+								<label ng-repeat="child in children" class="btn btn-success" ng-disabled="child{% verbatim %}{{c = $index}}{% endverbatim %}" btn-checkbox ng-click="toggleMonth($index, m)" ng-model="toggles.months['m'+$index+m]">{% verbatim %}{{child.name}}{% endverbatim %}</label>
+							</div></strong>
+				<table class="month month{% verbatim %}{{m = $index}}{% endverbatim %}">
+					<tr ng-repeat="week in month.weeks">
+						<td class="week week{% verbatim %}{{w = $index}}{% endverbatim %}">
+							<div class="date">Select Entire Week</div>
+							<div class="btn-toolbar btn-group">
+								<label ng-repeat="child in children" class="btn btn-primary" ng-disabled="child{% verbatim %}{{c = $index}}{% endverbatim %}" btn-checkbox ng-click="toggleWeek($index, m, w, week[0].raw)" ng-model="toggles.weeks['w'+$index+m+w]">{% verbatim %}{{child.name}}{% endverbatim %}</label>
+							</div>
+						</td>
+						<td ng-repeat="day in week">
+							<div class="date date{% verbatim %}{{d = $index}}{% endverbatim %}">
+								<span>{% verbatim %}{{day.raw | date:'EEEE'}}{% endverbatim %}</span>
+								<span class="dateAbr">{% verbatim %}{{day.raw | date:'M/d'}}{% endverbatim %}</span>
+							</div>
+							<div class="btn-toolbar btn-group" ng-if="day.raw">
+								<label ng-repeat="child in children" 
+										class="btn btn-primary child{% verbatim %}{{c = $index}}{% endverbatim %}" btn-checkbox 
+										ng-click="toggleDay($index, m, w, day)" 
+										ng-disabled="child{% verbatim %}{{c = $index}}{% endverbatim %}" 
+										ng-model="toggles.days['d'+$index+m+day.date]" 
+										ng-if="!holidays.hasOwnProperty(day.raw)">
+									{% verbatim %}{{child.name}}{% endverbatim %}
+								</label>
+								<h2 ng-if="holidays.hasOwnProperty(day.raw)">HOLIDAY</h2>
+							</div>
+							<a class="menu" href="#" ng-if="day.raw" tooltip='{% verbatim %}{{menu[day.month][day.date]}}{% endverbatim %}'>{% verbatim %}{{menu[day.month][day.date] | stub:25}}{% endverbatim %}</a>
+						</td>
+					</tr>
+				</table>
+			</tab>
+	    </tabset>
+	    <br>
+		
+		<br>
+		<button class="btn btn-primary btn-lg btn-block" ng-click="placeOrder()">Place Order</button>
+		<div id="order">
+			<div ng-repeat="child in order">
+				<h3>{% verbatim %}{{child.name}}{% endverbatim %}</h3>
+				<ul class="list-unstyled">
+					<li ng-if="child.year">All Year</li>
+					<li ng-repeat="date in child.dates">{% verbatim %}{{date | date:'fullDate'}}{% endverbatim %}</li>
+				</ul>
+            </div>
+		</div>
+		<br>
+	</div>
+	
+{% endblock %}
+
+{% block javascripts %}
+	<script>
+	angular.module('LunchApp', ['ui.bootstrap'])
+		.controller('calendarCtrl', ['$scope', function($scope){
+			$scope.toggles = {years: {}, months: {}, weeks: {}, days: {}};
+
+			removeValue = function(arr, value) {
+				delete arr[arr.lastIndexOf(value)];
+				arr.sort()
+				arr.pop();
+				return arr;
+			}
+
+			$scope.total = function() {
+				total = 0;
+				angular.forEach($scope.children, function(child) {
+					total += child.dates.length;
+				})
+				return total;
+			}
+
+			$scope.placeOrder = function() {
+				$scope.order = {};
+				angular.forEach($scope.children, function(child, id) {
+					if (child.year) {
+						$scope.order[id] = {name: child.name, year: true};
+						return;
+					}
+					$scope.order[child.name] = {name: child.name, total: $scope.children[id].dates.length, dates: []};
+
+					$scope.order[child.name].dates = $scope.children[id].dates;
+				});
+			}
+
+			$scope.toggleYear = function(childId) {
+				var id = 'y'+childId,
+					buttonState = !$scope.toggles.years[id];
+
+				$scope.children[childId].year = buttonState;
+
+				angular.forEach($scope.calendar, function(months, monthId) {
+					var monthToggleId = 'm'+childId+monthId;
+
+					$scope.toggles.months[monthToggleId] = !buttonState;			
+					$scope.toggleMonth(childId, monthId);
+					$scope.toggles.months[monthToggleId] = buttonState;
+				});
+				
+				$scope.toggles.years[id] = !buttonState;
+			}
+
+			/**
+			 * @ngdoc function
+			 * @name toggleMonth
+			 * @kind function
+			 *
+			 * @description Turns on or off all the dates of a week
+			 * @param {integer} childId The array index of the child selected (for $scope.children).
+			 * @param {integer} monthId The array index of the monthId (for $scope.calendar)
+			 * @param {integer} weekId The array index of the weekId (for $scope.calendar[].weeks)
+			 */
+			$scope.toggleMonth = function(childId, monthId) {
+				// Determine the new toggle state of the month
+				var id = 'm'+childId+monthId,
+					buttonState = !$scope.toggles.months[id],
+					month = getStartDate().getMonth() + 1;
+
+				// month = month.getMonth() + 1;
+
+				// Add or remove the date from the child's month list
+				buttonState ? $scope.children[childId].months.push(id) : removeValue($scope.children[childId].months, id);
+				(!buttonState) ? $scope.children[childId].year = buttonState : false;
+
+				angular.forEach($scope.calendar[monthId].weeks, function(week, weekId) {
+					var weekToggleId = 'w'+childId+monthId+weekId;
+
+					$scope.toggles.weeks[weekToggleId] = !buttonState;
+					$scope.toggleWeek(childId, monthId, weekId);
+					$scope.toggles.weeks[weekToggleId] = buttonState;
+
+					$scope.toggles.years[id] = false;
+				});
+
+				// Check to see if Month is selected
+				$scope.toggles.months[id] = !buttonState;
+
+				// Check to see if Year is selected
+				$scope.toggles.years['y'+childId] = false;
+			}
+
+			/**
+			 * @ngdoc function
+			 * @name toggleWeek
+			 * @kind function
+			 *
+			 * @description Turns on or off all the dates of a week
+			 * @param {integer} childId The array index of the child selected (for $scope.children).
+			 * @param {integer} monthId The array index of the monthId (for $scope.calendar)
+			 * @param {integer} weekId The array index of the weekId (for $scope.calendar[].weeks)
+			 */
+			$scope.toggleWeek = function(childId, month, week) {
+				// Determine the new toggle state of the week
+				var id = 'w'+childId+month+week,
+					buttonState = !$scope.toggles.weeks[id];
+
+				// console.log(t)
+				// Add or remove the date from the child's week list
+				(buttonState && $scope.children[childId].weeks.indexOf(id) === -1) ? $scope.children[childId].weeks.push(id) : false;
+				(!buttonState) ? removeValue($scope.children[childId].weeks, id) : false;
+				// (!buttonState) ? removeValue($scope.children[childId].months, 'm'+childId+monthId) : false;
+				(!buttonState) ? $scope.children[childId].year = buttonState : false;
+				// buttonState ? $scope.children[childId].weeks.push(id) : removeValue($scope.children[childId].weeks, id);
+
+				// Cycle through the calendar and toggle the days
+				angular.forEach($scope.calendar[month].weeks[week], function(day) {
+					var dayId = 'd'+childId+month+day.date;
+					// Test to see if the date exists first
+					if (day.raw) {
+						// We have to reset all of them to the opposite first
+						$scope.toggles.days[dayId] = !buttonState;
+						$scope.toggleDay(childId, month, week, day);
+						// Then after the days have been tallied we can toggle the button
+						$scope.toggles.days[dayId] = buttonState;
+					}
+				});
+
+				$scope.toggles.weeks[id] = !buttonState;
+
+				// Check to see if Month is selected
+				$scope.toggles.months['m'+childId+month] = false;
+
+				// Check to see if Year is selected
+				$scope.toggles.years['y'+childId] = false;
+			}
+
+			/**
+			 * @ngdoc function
+			 * @name toggleDay
+			 * @kind function
+			 *
+			 * @description Turns on or off all the date and updates the week buttons if needbe
+			 * @param {integer} childId The array index of the child selected (for $scope.children).
+			 * @param {integer} weekId The array index of the weekId (for $scope.calendar).
+			 * @param {integer} date The numerical value for selected date, also the object key for the child's days.
+			 */
+			$scope.toggleDay = function(childId, month, week, date) {
+				// Get the updated state:
+				var id = 'd'+childId+month+date.date,
+					buttonState = !$scope.toggles.days[id];
+
+				// Add or remove the date from the child's list
+				(buttonState && $scope.children[childId].dates.indexOf(date.raw) === -1) ? $scope.children[childId].dates.push(date.raw) : false;
+				(!buttonState) ? removeValue($scope.children[childId].dates, date.raw) : false;
+				// Remove weeks
+				// (!buttonState) ? removeValue($scope.children[childId].weeks, 'w'+childId+month+week) : false;
+				// (!buttonState) ? removeValue($scope.children[childId].months, 'm'+childId+monthId) : false;
+				(!buttonState) ? $scope.children[childId].year = buttonState : false;
+
+				// Check to see if week is selected
+				$scope.toggles.weeks['w'+childId+month+week] = false;
+
+				// Check to see if Month is selected
+				$scope.toggles.months['m'+childId+month] = false;
+
+				// Check to see if Year is selected
+				$scope.toggles.years['y'+childId] = false;
+			}
+
+
+			getStartDate = function() {
+				cur = new Date();
+				// Initialize the date
+				// cur.setDate(1);
+				cur.setHours(0);
+				cur.setMinutes(0);
+				cur.setSeconds(0);
+				cur.setMilliseconds(0);
+
+				// Initialize the start date to one week from today starting with Monday
+				if (cur.getDay() < 2) {
+					cur.setDate(cur.getDate() + 7);
+				} else {
+					cur.setDate(cur.getDate()-cur.getDay()+1 + 14);
+				}
+
+				return cur;
+			}
+
+			createCalendarMonthsArray = function(numOfMonths) {
+				var cur = getStartDate(),
+					monthCounter = 0,
+					curMonth = cur.getMonth(),
+					week = 0,
+					day = 0,
+					months = Array(),
+					startMonth = curMonth;
+
+				if (!numOfMonths) {
+					var may = 5;
+					if (curMonth > may) {
+						numOfMonths = 12 - curMonth + may;
+					} else {
+						numOfMonths = may - curMonth;
+					}
+				}
+
+				// Set the number of weeks for the calendar
+				numOfWeeks = numOfMonths || 5;
+				months[monthCounter] = {month: cur.valueOf(), weeks: Array()};
+
+				count = 0;
+				
+
+				// Add dates to the weeks until the desired numOfWeeks is filled
+				while (numOfMonths > monthCounter) {
+					// Holiday Check:
+					// && !holidays.hasOwnProperty(cur.getDate())
+
+					// Make sure that Saturday (6) and Sunday (0) are not part of the calendar
+					if ((cur.getDay() > 0 && cur.getDay() < 6)) {
+						if (months[monthCounter] === undefined) {
+							months[monthCounter] = {month: cur.valueOf(), weeks: Array()};
+							// console.log(cur.toString(), numOfMonths, monthCounter);
+						}
+
+						if (months[monthCounter].weeks[week] === undefined) {
+							months[monthCounter].weeks[week] = Array();
+						}
+						while (months[monthCounter].weeks[week].length+1 !== cur.getDay()) {
+							// console.log(months[monthCounter].weeks[week].length,cur.getDay())
+							months[monthCounter].weeks[week].push({});
+						}
+						months[monthCounter].weeks[week].push({raw: cur.valueOf(), day: cur.getDay(), dateString: cur.toString(), month: cur.getMonth()+1, date: cur.getDate()});
+					}
+
+					// Increment the week when we get to the end
+					if (cur.getDay() === 6) {
+						week++;
+						// months[monthCounter].weeks
+					}
+
+					// Increment the date to tomorrow
+					cur.setDate(cur.getDate() + 1);
+
+					// Check to see if next date is in the next month
+					if (cur.getMonth() !== curMonth) {
+						curMonth = cur.getMonth();
+						monthCounter++;
+						week = 0;
+						if (cur.getDay() === 6) {
+							cur.setDate(cur.getDate() + 1);
+						}
+					}
+
+				}
+				return months;
+			};
+
+			// First Month in integer form (0-11)
+			$firstMonth = 8;
+			$numberOfMonths = 5;
+
+			$scope.isCollapsed = true;
+
+			// Holidays
+			$scope.holidays = {
+				1409547600000: true,
+				1409634000000: true,
+				1413176400000: true,
+				1413262800000: true,
+				1413349200000: true,
+				1413435600000: true,
+				1413522000000: true
+			};
+
+			// Menu
+			$scope.menu = {
+				cost: 3.75,
+				9: {
+					1: "Potatoes and Cheese",
+					2: "Meet and potatoes",
+					3: "Potatoes and Cheese",
+					4: "Meet and potatoes",
+					5: "Potatoes and Cheese",
+					6: "Meet and potatoes",
+					7: "Potatoes and Cheese",
+					8: "Meet and potatoes",
+					9: "Potatoes and Cheese",
+					10: "Meet and potatoes",
+					11: "Potatoes and Cheese",
+					12: "Meet and potatoes",
+					13: "Potatoes and Cheese",
+					14: "Meet and potatoes",
+					15: "Potatoes and Cheese",
+					16: "Meet and potatoes",
+					17: "Potatoes and Cheese",
+					18: "Meet and potatoes",
+					19: "Potatoes and Cheese",
+					20: "Meet and potatoes",
+					21: "Potatoes and Cheese",
+					22: "Meet and potatoes, goat milk shakes and brussel sprout paste",
+					23: "Potatoes and Cheese",
+					24: "Meet and potatoes",
+					25: "Potatoes and Cheese",
+					26: "Meet and potatoes",
+					27: "Potatoes and Cheese",
+					28: "Meet and potatoes",
+					29: "Potatoes and Cheese",
+					30: "Meet and potatoes",
+					31: "Meet and potatoes"
+				}
+			};
+
+			// Children will hold the names, total lunches, whether to buy all year, and dates the children will eat lunch.
+			//   All year implies dates will be useless
+			//   Months and weeks will be kept track of by first date of the range
+			$scope.children = [
+				{name: 'Sarah', total: 0, year: false, months: [], weeks: [], dates: []}, 
+				{name: 'Jojo', total: 0, year: false, months: [], weeks: [], dates: []}, 
+				{name: 'Mia', total: 0, year: false, months: [], weeks: [], dates: []},
+				{name: 'JohnJo', total: 0, year: false, months: [], weeks: [], dates: []}
+			];
+
+			$scope.order = {}
+
+			$scope.calendar = createCalendarMonthsArray();
+			// $scope.calendar = createCalendarArray(8, 2014, 5); 
+
+		}])
+		.filter('stub', function() {
+			return function(input, size) {
+				input = input || '';
+				size = size || 10;
+				var out = "";
+				out = input.substr(0, size) + '...';
+				return out;
+			};
+		});
+
+		
+	</script>
+{% endblock %}

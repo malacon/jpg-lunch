@@ -16,4 +16,23 @@ class DefaultController extends Controller
     {
         return array();
     }
+
+    /**
+     * @Route("/parent")
+     * @Template()
+     */
+    public function parentOrderAction()
+    {
+    	return array();
+    }
+
+    /**
+     * @Route("/setup")
+     * @Template()
+     */
+    public function setupAction()
+    {
+    	return array();
+    }
+
 }

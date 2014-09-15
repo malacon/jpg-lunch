@@ -7,7 +7,6 @@
 	}
 	.title {
 		margin: 0 auto;
-		text-align: center;
 	}
 	.title img {
 		width: 100px;
@@ -19,13 +18,19 @@
 {% endblock %}
 
 {% block body -%}
-<div class="welcome">
+<div class="welcome text-center">
 	<h2 class="title"><img src="{{ asset('images/logo.png') }}" alt=""><br>Lunch System</h2>
 	<br>
-	<ul class="list-inline list-unstyled text-center">
+	<ul class="list-inline list-unstyled">
 		<li><a href="/parent">Parent Order Form</a></li> - 
-		<li><a href="/setup/menu">Calendar/Menu Setup</a></li> - 
+		<li>System Setup</li> - 
 		<li><a href="/checkin">Lunch Check-in</a></li>
+	</ul>
+
+	<h3>Setup</h3>
+	<ul class="list-inline list-unstyled">
+		<li><a href="/setup/menu">Menu</a></li>
+		<li><a href="/setup/calendar">Calendar</a></li>
 	</ul>
 </div>
 {% endblock %}

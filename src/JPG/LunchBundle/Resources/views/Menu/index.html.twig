@@ -1,0 +1,364 @@
+{% extends '::base.html.twig' %}
+
+{% block stylesheets %}
+<style>
+    .container {
+        padding: 10px;
+        width: 100%;
+    }
+    table {
+        border: 1px solid black;
+    }
+    table td {
+        border: 1px solid black;
+        width: 15%;
+        height: 170px;
+        text-align: left;
+        position: relative;
+    }
+    td .date {
+        position: absolute;
+        top: 0;
+        text-align: center;
+        width: 100%;
+        font-weight: bold;
+        z-index: 1000;
+    }
+    td span.instructions {
+        font-size: 8px;
+        text-align: center;
+    }
+    span.dateAbr {
+        position: absolute;
+        right: 10px;
+    }
+    td .btn-toolbar {
+        margin: 0 auto;
+        text-align: center;
+        height: 100%;
+        padding: 10px;
+    }
+    .btn-toolbar .btn {
+        margin-top: 7px;
+    }
+    .year-toolbar {
+        margin-left: 10px;
+    }
+    .month, .year {
+        text-align: center;
+    }
+    .week {
+        background: #e2e2e2;
+    }
+    .date {
+        text-align: right;
+        
+    }
+    .day {
+        text-align: center;
+    }
+    .menu {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        text-align: left;
+        padding: 0 10px;
+    }
+
+    .box { 
+        width: 15%;
+        height: 200px;
+        position: relative;
+    }
+    li.box {
+        display: inline-block;
+    }
+    table {
+        margin-top: 10px;
+        width: 100%;
+    }
+    .tab-content {
+        border: 1px solid #ddd;
+        border-top: none;
+        padding: 10px 5px;
+    }
+    .badge.badge-warning {
+        color: #fff;
+        background-color: #f0ad4e;
+    }
+    .children {
+        display: inline-block;
+    }
+    .title img {
+        width: 100px;
+    }
+    .tabset {
+        min-width: 1210px;
+    }
+    textarea {
+        width: 100%;
+        height: 100px;
+    }
+    .schoolday-toggle {
+        bottom: 0;
+        position: absolute;
+    }
+    .menuitem {
+        margin-top: -5px;
+    }
+    .menu-item {
+        display: block;
+        width: 100%;
+        height: 135px;
+        background: #ECF0F5;
+        padding: 30px 5px 0px;
+        top: 0;
+        position: absolute;
+        z-index: 1;
+    }
+    .instructions {
+        font-size: 8px;
+        text-align: center;
+        display: block;
+    }
+    .loading {
+        display: block;
+        position: fixed;
+        left: 45%;
+        font-size: 30px;
+        font-weight: bold;
+        top: 50%;
+        z-index: -1;
+    }
+    .base {
+        background-color: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block body -%}
+    <div class="loading">Loading...</div>
+    <div ng-controller="calendarCtrl" ng-cloak class="ng-cloak base">
+        <h2 class="title"><img src="{{ asset('images/logo.png') }}" alt=""> Lunch Calendar</h2>
+        <h3>Menu Setup</h3>
+        {# <pre>{% verbatim %}{{menu | json}}{% endverbatim %}</pre> #}
+        <tabset class="tabset">
+            <tab heading="{% verbatim %}{{month.month | date:'MMMM'}}{% endverbatim %}" ng-repeat="month in calendar">
+                <table class="month month{% verbatim %}{{m = $index}}{% endverbatim %}">
+                    <tr ng-repeat="week in month.weeks">
+                        <td ng-repeat="day in week">
+                            <div class="date date{% verbatim %}{{d = $index}}{% endverbatim %}">
+                                <span>{% verbatim %}{{day.raw | date:'EEEE'}}{% endverbatim %}</span>
+                                <span class="dateAbr">{% verbatim %}{{day.raw | date:'M/d'}}{% endverbatim %}</span>
+                            </div>
+                            <div class="menuitem" ng-if="day.raw">
+                                
+                                <div ng-if="!toggles.holidays[day.raw]" ng-controller="menuItemCtrl">
+                                    <p ng-click="toggleEdit()" ng-if="!edit" class="menu-item">{% verbatim %}{{menu[day.raw].description}}{% endverbatim %}</p>
+                                    <div ng-if="edit">
+                                        <span class="instructions">(Shift + Enter to save)</span>
+                                        <textarea type="text" ng-keypress="saveMenu($event, day.raw)" ng-model="menu[day.raw].description"></textarea>
+                                    </div>
+                                </div>
+                                <label class="btn btn-primary btn-block schoolday-toggle" btn-checkbox ng-click="updateHoliday(day.raw)" ng-model="toggles.holidays[day.raw]">{% verbatim %}{{(toggles.holidays[day.raw] ? 'HOLIDAY' : 'School Day')}}{% endverbatim %}</label>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </tab>
+        </tabset>
+        {# <button class="btn btn-primary btn-lg btn-block" >Update Calendar</button> #}
+    </div>
+
+
+    {# <h1>Menu list</h1>
+
+    <table class="records_list table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Description</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for entity in entities %}
+            <tr>
+                <td><a href="{{ path('setup_menu_show', { 'id': entity.id }) }}">{{ entity.id }}</a></td>
+                <td>{{ entity.description }}</td>
+                <td>{% if entity.date %}{{ entity.date|date('Y-m-d H:i:s') }}{% endif %}</td>
+                <td>
+                <ul>
+                    <li>
+                        <a href="{{ path('setup_menu_show', { 'id': entity.id }) }}">show</a>
+                    </li>
+                    <li>
+                        <a href="{{ path('setup_menu_edit', { 'id': entity.id }) }}">edit</a>
+                    </li>
+                </ul>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+        <ul>
+        <li>
+            <a href="{{ path('setup_menu_new') }}">
+                Create a new entry
+            </a>
+        </li>
+    </ul> #}
+{% endblock %}
+
+{% block javascripts %}
+<script>
+angular.module('LunchApp', ['ui.bootstrap'])
+    .controller('menuItemCtrl', ['$scope', '$http', function($scope, $http){
+        $scope.edit = false;
+
+        $scope.saveMenu = function($event, date) {
+            if ($event.keyIdentifier === 'Enter' && $event.shiftKey) {
+                $scope.edit = false;
+
+                $scope.menu[date].id = $scope.menu[date].id || 0
+                $scope.menu[date].date = $scope.menu[date].date || date
+                // console.log($scope.menu[date]);
+
+                $http.post('/setup/menu/save?id='+$scope.menu[date].id+'&description='+$scope.menu[date].description+'&date='+$scope.menu[date].date, $scope.menu[date]).
+                    success(function(data, status) {
+                        // console.log(data, status)
+                        $scope.menu[data.date].id = data.id;
+                        $scope.menu[data.date].date = data.date;
+                        $scope.menu[data.date].description = data.description;
+                    }).
+                    error(function(data, status) {
+                        $scope.edit = true;
+                        // console.log(data, status)
+                });
+            }   
+        }
+
+        $scope.toggleEdit = function() {
+            $scope.edit = !$scope.edit;
+        }
+
+    }])
+    .controller('calendarCtrl', ['$scope', '$http', function($scope, $http){
+        $scope.menu = {{menu | raw}};
+        $scope.holidays = {{holidays | raw}};
+        $scope.toggles = {holidays: []};
+
+        angular.forEach($scope.holidays, function(day) {
+            $scope.toggles.holidays[day] = true;
+        });
+        console.log($scope.toggles, $scope.holidays)
+
+        $scope.updateHoliday = function(day) {
+            $http.get('/setup/menu/holiday/'+day).
+            success(function(data, status) {
+                console.log(data, status);
+            }).
+            error(function(data, status) {
+                console.log('error', data, status);
+            });
+        }
+
+        getStartDate = function() {
+            cur = new Date();
+            // Initialize the date
+            // cur.setDate(1);
+            cur.setHours(0);
+            cur.setMinutes(0);
+            cur.setSeconds(0);
+            cur.setMilliseconds(0);
+
+            // Initialize the start date to one week from today starting with Monday
+            if (cur.getDay() < 2) {
+                cur.setDate(cur.getDate() + 7);
+            } else {
+                cur.setDate(cur.getDate()-cur.getDay()+1 + 14);
+            }
+
+            return cur;
+        }
+
+        createCalendarMonthsArray = function(numOfMonths) {
+            var cur = getStartDate(),
+                monthCounter = 0,
+                curMonth = cur.getMonth(),
+                week = 0,
+                day = 0,
+                months = Array(),
+                startMonth = curMonth;
+
+            if (!numOfMonths) {
+                var may = 5;
+                if (curMonth > may) {
+                    numOfMonths = 12 - curMonth + may;
+                } else {
+                    numOfMonths = may - curMonth;
+                }
+            }
+
+            // Set the number of weeks for the calendar
+            numOfWeeks = numOfMonths || 5;
+            months[monthCounter] = {month: cur.valueOf(), weeks: Array()};
+
+            count = 0;
+            
+
+            // Add dates to the weeks until the desired numOfWeeks is filled
+            while (numOfMonths > monthCounter) {
+                // Holiday Check:
+                // && !holidays.hasOwnProperty(cur.getDate())
+
+                // Make sure that Saturday (6) and Sunday (0) are not part of the calendar
+                if ((cur.getDay() > 0 && cur.getDay() < 6)) {
+                    if (months[monthCounter] === undefined) {
+                        months[monthCounter] = {month: cur.valueOf(), weeks: Array()};
+                        // console.log(cur.toString(), numOfMonths, monthCounter);
+                    }
+
+                    if (months[monthCounter].weeks[week] === undefined) {
+                        months[monthCounter].weeks[week] = Array();
+                    }
+                    while (months[monthCounter].weeks[week].length+1 !== cur.getDay()) {
+                        // console.log(months[monthCounter].weeks[week].length,cur.getDay())
+                        months[monthCounter].weeks[week].push({});
+                    }
+                    months[monthCounter].weeks[week].push({raw: cur.valueOf(), day: cur.getDay(), dateString: cur.toString(), month: cur.getMonth()+1, date: cur.getDate()});
+                }
+
+                // Increment the week when we get to the end
+                if (cur.getDay() === 6) {
+                    week++;
+                    // months[monthCounter].weeks
+                }
+
+                // Increment the date to tomorrow
+                cur.setDate(cur.getDate() + 1);
+
+                // Check to see if next date is in the next month
+                if (cur.getMonth() !== curMonth) {
+                    curMonth = cur.getMonth();
+                    monthCounter++;
+                    week = 0;
+                    if (cur.getDay() === 6) {
+                        cur.setDate(cur.getDate() + 1);
+                    }
+                }
+
+            }
+            return months;
+        };
+
+        $scope.calendar = createCalendarMonthsArray();
+    }]);
+
+
+</script>
+{% endblock %}
+    
